@@ -1,19 +1,15 @@
 {
     "name": "SED-Midias",
-    "description": "",
+    "description": "Extensão Super Kit Automação para micro:bit com Robotbit",
     "dependencies": {
         "core": "*",
-        "radio": "*",
-        "microphone": "*"
+        "robotbit": "github:KittenBot/pxt-robotbit"
     },
     "files": [
-        "main.blocks",
         "main.ts",
         "README.md"
     ],
-    "testFiles": [
-        "test.ts"
-    ],
+    "testFiles": [],
     "targetVersions": {
         "target": "9.0.12",
         "targetId": "microbit"
