@@ -1,0 +1,938 @@
+const enum LcdPosition1602 {
+    //% block="1"
+    Pos1 = 1,
+    //% block="2"
+    Pos2 = 2,
+    //% block="3"
+    Pos3 = 3,
+    //% block="4"
+    Pos4 = 4,
+    //% block="5"
+    Pos5 = 5,
+    //% block="6"
+    Pos6 = 6,
+    //% block="7"
+    Pos7 = 7,
+    //% block="8"
+    Pos8 = 8,
+    //% block="9"
+    Pos9 = 9,
+    //% block="10"
+    Pos10 = 10,
+    //% block="11"
+    Pos11 = 11,
+    //% block="12"
+    Pos12 = 12,
+    //% block="13"
+    Pos13 = 13,
+    //% block="14"
+    Pos14 = 14,
+    //% block="15"
+    Pos15 = 15,
+    //% block="16"
+    Pos16 = 16,
+    //% block="17"
+    Pos17 = 17,
+    //% block="18"
+    Pos18 = 18,
+    //% block="19"
+    Pos19 = 19,
+    //% block="20"
+    Pos20 = 20,
+    //% block="21"
+    Pos21 = 21,
+    //% block="22"
+    Pos22 = 22,
+    //% block="23"
+    Pos23 = 23,
+    //% block="24"
+    Pos24 = 24,
+    //% block="25"
+    Pos25 = 25,
+    //% block="26"
+    Pos26 = 26,
+    //% block="27"
+    Pos27 = 27,
+    //% block="28"
+    Pos28 = 28,
+    //% block="29"
+    Pos29 = 29,
+    //% block="30"
+    Pos30 = 30,
+    //% block="31"
+    Pos31 = 31,
+    //% block="32"
+    Pos32 = 32
+}
+
+//% color="#000080" weight=120 icon="\uf013" block="Super Kit Automação"
+//% groups=['Displays', 'Keypads & Expansores', 'RFID', 'Sensores', 'LEDs & Atuadores']
+namespace superKitAutomacao {
+
+    // =======================================================
+    // ENUMERAÇÕES
+    // =======================================================
+
+    const enum LcdBacklight {
+        //% block="desligado"
+        Off = 0,
+        //% block="ligado"
+        On = 8
+    }
+
+    const enum TextAlignment {
+        //% block="esquerda"
+        Left,
+        //% block="direita"
+        Right,
+        //% block="centro"
+        Center,
+    }
+
+    export enum TextOption {
+        //% block="alinhar à esquerda"
+        AlignLeft,
+        //% block="alinhar à direita"
+        AlignRight,
+        //% block="centralizar"
+        AlignCenter,
+        //% block="preencher com zeros"
+        PadWithZeros
+    }
+
+    export enum LcdChar {
+        //% block="1"
+        c1 = 0,
+        //% block="2"
+        c2 = 1,
+        //% block="3"
+        c3 = 2,
+        //% block="4"
+        c4 = 3,
+        //% block="5"
+        c5 = 4,
+        //% block="6"
+        c6 = 5,
+        //% block="7"
+        c7 = 6,
+        //% block="8"
+        c8 = 7
+    }
+
+    export enum EstadoLinha {
+        //% block="Branco"
+        Branco = 0,
+        //% block="Preto"
+        Preto = 1
+    }
+
+    export enum DistanciaUnidade {
+        //% block="cm"
+        Centimetros = 0,
+        //% block="polegadas"
+        Polegadas = 1
+    }
+
+    export enum EstadoChave {
+        //% block="LIGADO"
+        Ligado = 1,
+        //% block="DESLIGADO"
+        Desligado = 0
+    }
+
+    export enum PinoPCF8574 {
+        //% block="P0"
+        P0 = 0,
+        //% block="P1"
+        P1 = 1,
+        //% block="P2"
+        P2 = 2,
+        //% block="P3"
+        P3 = 3,
+        //% block="P4"
+        P4 = 4,
+        //% block="P5"
+        P5 = 5,
+        //% block="P6"
+        P6 = 6,
+        //% block="P7"
+        P7 = 7
+    }
+
+    // =======================================================
+    // VARIÁVEIS GLOBAIS
+    // =======================================================
+
+    let oledAddr = 0x3C
+    let rfidAddr = 0x24
+    let keypadI2cAddr = 0x20
+
+    let pcfStates: { [addr: number]: number } = {}
+
+    // =======================================================
+    // FONTE OLED
+    // =======================================================
+
+    const FONTE_OLED = [
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5f, 0x00, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00,
+        0x14, 0x7f, 0x14, 0x7f, 0x14, 0x24, 0x2a, 0x7f, 0x2a, 0x12, 0x23, 0x13, 0x08, 0x64, 0x62,
+        0x36, 0x49, 0x55, 0x22, 0x50, 0x00, 0x05, 0x03, 0x00, 0x00, 0x00, 0x1c, 0x22, 0x41, 0x00,
+        0x00, 0x41, 0x22, 0x1c, 0x00, 0x14, 0x08, 0x3e, 0x08, 0x14, 0x08, 0x08, 0x3e, 0x08, 0x08,
+        0x00, 0x50, 0x30, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x60, 0x60, 0x00, 0x00,
+        0x20, 0x10, 0x08, 0x04, 0x02, 0x3e, 0x51, 0x49, 0x45, 0x3e, 0x00, 0x42, 0x7f, 0x40, 0x00,
+        0x42, 0x61, 0x51, 0x49, 0x46, 0x21, 0x41, 0x45, 0x4b, 0x31, 0x18, 0x14, 0x12, 0x7f, 0x10,
+        0x27, 0x45, 0x45, 0x45, 0x39, 0x3c, 0x4a, 0x49, 0x49, 0x30, 0x01, 0x71, 0x09, 0x05, 0x03,
+        0x36, 0x49, 0x49, 0x49, 0x36, 0x06, 0x49, 0x49, 0x29, 0x1e, 0x00, 0x36, 0x36, 0x00, 0x00,
+        0x00, 0x56, 0x36, 0x00, 0x00, 0x08, 0x14, 0x22, 0x41, 0x00, 0x24, 0x24, 0x24, 0x24, 0x24,
+        0x00, 0x41, 0x22, 0x14, 0x08, 0x02, 0x01, 0x51, 0x09, 0x06, 0x32, 0x49, 0x79, 0x41, 0x3e,
+        0x7e, 0x11, 0x11, 0x11, 0x7e, 0x7f, 0x49, 0x49, 0x49, 0x36, 0x3e, 0x41, 0x41, 0x41, 0x22,
+        0x7f, 0x41, 0x41, 0x22, 0x1c, 0x7f, 0x49, 0x49, 0x49, 0x41, 0x7f, 0x09, 0x09, 0x09, 0x01,
+        0x3e, 0x41, 0x49, 0x49, 0x7a, 0x7f, 0x08, 0x08, 0x08, 0x7f, 0x00, 0x41, 0x7f, 0x41, 0x00,
+        0x20, 0x40, 0x41, 0x3f, 0x01, 0x7f, 0x08, 0x14, 0x22, 0x41, 0x7f, 0x40, 0x40, 0x40, 0x40,
+        0x7f, 0x02, 0x0c, 0x02, 0x7f, 0x7f, 0x04, 0x08, 0x10, 0x7f, 0x3e, 0x41, 0x41, 0x41, 0x3e,
+        0x7f, 0x09, 0x09, 0x09, 0x06, 0x3e, 0x41, 0x51, 0x21, 0x5e, 0x7f, 0x09, 0x19, 0x29, 0x46,
+        0x46, 0x49, 0x49, 0x49, 0x31, 0x01, 0x01, 0x7f, 0x01, 0x01, 0x3f, 0x40, 0x40, 0x40, 0x3f,
+        0x1f, 0x20, 0x40, 0x20, 0x1f, 0x3f, 0x40, 0x38, 0x40, 0x3f, 0x63, 0x14, 0x08, 0x14, 0x63,
+        0x07, 0x08, 0x70, 0x08, 0x07, 0x61, 0x51, 0x49, 0x45, 0x43
+    ]
+
+    // =======================================================
+    // LCD - ESTADO E NÍVEL DE ABSTRAÇÃO
+    // =======================================================
+
+    const enum Lcd {
+        Command = 0,
+        Data = 1
+    }
+
+    interface LcdState {
+        i2cAddress: number;
+        backlight: LcdBacklight;
+        characters: Buffer;
+        rows: number;
+        columns: number;
+        rowNeedsUpdate: number;
+        refreshIntervalId: number;
+        sendBuffer: Buffer;
+    }
+
+    let lcdState: LcdState = undefined;
+
+    function autoConnect(): boolean {
+        let buf = control.createBuffer(1);
+        buf.setNumber(NumberFormat.UInt8LE, 0, 0);
+
+        if (0 == pins.i2cWriteBuffer(39, buf, false)) {
+            connectLcd(39);
+        } else if (0 == pins.i2cWriteBuffer(63, buf, false)) {
+            connectLcd(63);
+        }
+        return !!lcdState;
+    }
+
+    function write4bits(i2cAddress: number, value: number, threeBytesBuffer: Buffer) {
+        threeBytesBuffer.setNumber(NumberFormat.Int8LE, 0, value);
+        threeBytesBuffer.setNumber(NumberFormat.Int8LE, 1, value | 0x04);
+        threeBytesBuffer.setNumber(NumberFormat.Int8LE, 2, value & (0xff ^ 0x04));
+        pins.i2cWriteBuffer(i2cAddress, threeBytesBuffer);
+    }
+
+    function send(RS_bit: number, payload: number) {
+        if (!lcdState) return;
+
+        const highnib = (payload & 0xf0) | lcdState.backlight | RS_bit;
+        const lownib = ((payload << 4) & 0xf0) | lcdState.backlight | RS_bit;
+
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 0, highnib);
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 1, highnib | 0x04);
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 2, highnib & (0xff ^ 0x04));
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 3, lownib);
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 4, lownib | 0x04);
+        lcdState.sendBuffer.setNumber(NumberFormat.Int8LE, 5, lownib & (0xff ^ 0x04));
+        pins.i2cWriteBuffer(lcdState.i2cAddress, lcdState.sendBuffer);
+    }
+
+    function sendCommand(command: number) {
+        send(Lcd.Command, command);
+    }
+
+    function sendData(data: number) {
+        send(Lcd.Data, data);
+    }
+
+    function setCursor(line: number, column: number) {
+        const offsets = [0x00, 0x40, 0x14, 0x54];
+        sendCommand(0x80 | (offsets[line] + column));
+    }
+
+    function requestRedraw() {
+        if (!lcdState.refreshIntervalId) {
+            lcdState.refreshIntervalId = control.setInterval(refreshDisplay, 100, control.IntervalMode.Timeout);
+        }
+        basic.pause(0);
+    }
+
+    function initBuffer(columns: number, rows: number) {
+        if (lcdState && lcdState.columns === 0) {
+            lcdState.columns = columns;
+            lcdState.rows = rows;
+            lcdState.characters = pins.createBuffer(lcdState.rows * lcdState.columns);
+
+            const whitespace = " ".charCodeAt(0);
+            for (let pos = 0; pos < lcdState.rows * lcdState.columns; pos++) {
+                lcdState.characters[pos] = whitespace;
+            }
+            updateCharacterBuffer(
+                "",
+                0,
+                lcdState.columns * lcdState.rows,
+                lcdState.columns,
+                lcdState.rows,
+                TextAlignment.Left,
+                " "
+            );
+        }
+    }
+
+    //% blockHidden=true
+    export function updateCharacterBuffer(
+        text: string,
+        offset: number,
+        length: number,
+        columns: number,
+        rows: number,
+        alignment: TextAlignment,
+        pad: string
+    ): void {
+        if (!lcdState && !autoConnect()) return;
+
+        initBuffer(columns, rows);
+
+        if (columns !== lcdState.columns || rows !== lcdState.rows) return;
+
+        if (offset < 0) offset = 0;
+
+        const fillCharacter = pad.length > 0 ? pad.charCodeAt(0) : " ".charCodeAt(0);
+
+        let endPosition = offset + length;
+        if (endPosition > lcdState.columns * lcdState.rows) {
+            endPosition = lcdState.columns * lcdState.rows;
+        }
+        let lcdPos = offset;
+
+        let paddingEnd = offset;
+        if (alignment === TextAlignment.Right) {
+            paddingEnd = endPosition - text.length;
+        } else if (alignment === TextAlignment.Center) {
+            paddingEnd = offset + Math.idiv(endPosition - offset - text.length, 2);
+        }
+
+        while (lcdPos < paddingEnd) {
+            if (lcdState.characters[lcdPos] != fillCharacter) {
+                lcdState.characters[lcdPos] = fillCharacter;
+                invalidateLcdPosition(lcdPos);
+            }
+            lcdPos++;
+        }
+
+        let textPosition = 0;
+        while (lcdPos < endPosition && textPosition < text.length) {
+            if (lcdState.characters[lcdPos] != text.charCodeAt(textPosition)) {
+                lcdState.characters[lcdPos] = text.charCodeAt(textPosition);
+                invalidateLcdPosition(lcdPos);
+            }
+            lcdPos++;
+            textPosition++;
+        }
+
+        while (lcdPos < endPosition) {
+            if (lcdState.characters[lcdPos] != fillCharacter) {
+                lcdState.characters[lcdPos] = fillCharacter;
+                invalidateLcdPosition(lcdPos);
+            }
+            lcdPos++;
+        }
+
+        requestRedraw();
+    }
+
+    function sendRowRepeated(row: number): void {
+        setCursor(row, 0);
+        for (let position = lcdState.columns * row; position < lcdState.columns * (row + 1); position++) {
+            sendData(lcdState.characters[position]);
+        }
+    }
+
+    function refreshDisplay() {
+        if (!lcdState) return;
+        lcdState.refreshIntervalId = undefined;
+
+        for (let i = 0; i < lcdState.rows; i++) {
+            if (lcdState.rowNeedsUpdate & (1 << i)) {
+                lcdState.rowNeedsUpdate &= ~(1 << i);
+                sendRowRepeated(i);
+            }
+        }
+    }
+
+    function invalidateLcdPosition(lcdPos: number) {
+        lcdState.rowNeedsUpdate |= (1 << Math.idiv(lcdPos, lcdState.columns));
+    }
+
+    //% blockHidden=true
+    export function toAlignment(option?: TextOption): TextAlignment {
+        if (option === TextOption.AlignRight || option === TextOption.PadWithZeros) {
+            return TextAlignment.Right;
+        } else if (option === TextOption.AlignCenter) {
+            return TextAlignment.Center;
+        } else {
+            return TextAlignment.Left;
+        }
+    }
+
+    //% blockHidden=true
+    export function toPad(option?: TextOption): string {
+        return option === TextOption.PadWithZeros ? "0" : " ";
+    }
+
+    // =======================================================
+    // BLOCOS DO LCD
+    // =======================================================
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_set_address" block="conectar LCD no endereço I2C $i2cAddress"
+    //% i2cAddress.min=0 i2cAddress.max=127 i2cAddress.defl=39
+    //% weight=100
+    export function connectLcd(i2cAddress: number): void {
+        if (lcdState && lcdState.i2cAddress == i2cAddress) return;
+
+        if (lcdState && lcdState.refreshIntervalId) {
+            control.clearInterval(lcdState.refreshIntervalId, control.IntervalMode.Timeout);
+            lcdState.refreshIntervalId = undefined;
+        }
+
+        lcdState = {
+            i2cAddress: i2cAddress,
+            backlight: LcdBacklight.On,
+            columns: 0,
+            rows: 0,
+            characters: undefined,
+            rowNeedsUpdate: 0,
+            refreshIntervalId: undefined,
+            sendBuffer: pins.createBuffer(6 * pins.sizeOf(NumberFormat.Int8LE))
+        };
+
+        basic.pause(50);
+
+        pins.i2cWriteNumber(
+            lcdState.i2cAddress,
+            lcdState.backlight,
+            NumberFormat.Int8LE
+        );
+        basic.pause(50);
+
+        const buf = pins.createBuffer(3 * pins.sizeOf(NumberFormat.Int8LE));
+        write4bits(i2cAddress, 0x30, buf);
+        control.waitMicros(4100);
+        write4bits(i2cAddress, 0x30, buf);
+        control.waitMicros(4100);
+        write4bits(i2cAddress, 0x30, buf);
+        control.waitMicros(4100);
+        write4bits(i2cAddress, 0x20, buf);
+        control.waitMicros(1000);
+
+        const LCD_FUNCTIONSET = 0x20;
+        const LCD_4BITMODE = 0x00;
+        const LCD_2LINE = 0x08;
+        const LCD_5x8DOTS = 0x00;
+        send(Lcd.Command, LCD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
+        control.waitMicros(1000);
+
+        const LCD_DISPLAYCONTROL = 0x08;
+        const LCD_DISPLAYON = 0x04;
+        const LCD_CURSOROFF = 0x00;
+        const LCD_BLINKOFF = 0x00;
+        send(Lcd.Command, LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
+        control.waitMicros(1000);
+
+        const LCD_ENTRYMODESET = 0x04;
+        const LCD_ENTRYLEFT = 0x02;
+        const LCD_ENTRYSHIFTDECREMENT = 0x00;
+        send(Lcd.Command, LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
+        control.waitMicros(1000);
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_is_connected" block="LCD está conectado"
+    //% weight=69
+    export function isLcdConnected(): boolean {
+        return !!lcdState || autoConnect();
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_clear" block="limpar LCD"
+    //% weight=48
+    export function limparLCD(): void {
+        if (!lcdState && !autoConnect()) return;
+        let cols = (lcdState && lcdState.columns > 0) ? lcdState.columns : 16;
+        let rows = (lcdState && lcdState.rows > 0) ? lcdState.rows : 2;
+        updateCharacterBuffer("", 0, cols * rows, cols, rows, TextAlignment.Left, " ");
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_makecharacter" block="criar caractere $char | $im"
+    //% im.shadow=superkitautomacao_lcd_characterpixels
+    //% weight=60
+    export function lcdMakeCharacter(char: LcdChar, im: Image): void {
+        if (!lcdState && !autoConnect()) return;
+
+        const customChar = [0, 0, 0, 0, 0, 0, 0, 0];
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 5; x++) {
+                if (im.pixel(x, y)) {
+                    customChar[y] |= 1 << (4 - x);
+                }
+            }
+        }
+        const LCD_SETCGRAMADDR = 0x40;
+        sendCommand(LCD_SETCGRAMADDR | (char << 3));
+        for (let y = 0; y < 8; y++) {
+            sendData(customChar[y]);
+        }
+        control.waitMicros(1000);
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_characterpixels" block="caractere"
+    //% imageLiteral=1 imageLiteralColumns=5 imageLiteralRows=8 imageLiteralScale=0.6
+    //% shim=images::createImage
+    //% weight=59
+    export function lcdCharacterPixels(i: string): Image {
+        return <Image><any>"00000:00000:00000:00000:00000:00000:00000:00000";
+    }
+
+    //% blockHidden=true
+    export function setCharacter(char: number, offset: number, columns: number, rows: number): void {
+        if (!lcdState && !autoConnect()) return;
+
+        initBuffer(columns, rows);
+
+        if (columns !== lcdState.columns || rows !== lcdState.rows) return;
+        if (offset < 0 || offset >= lcdState.rows * lcdState.columns) return;
+
+        lcdState.characters[offset] = char;
+        invalidateLcdPosition(offset);
+        requestRedraw();
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_show_string_on_1602"
+    //% block="LCD1602 mostrar %text | na posição %startPosition=superkitautomacao_lcd_position_1602 com tamanho %length || e %option"
+    //% text.shadowOptions.toString=true
+    //% length.min=1 length.max=32 length.defl=16
+    //% startPosition.defl=1
+    //% expandableArgumentMode="toggle"
+    //% inlineInputMode="inline"
+    //% weight=90
+    export function showStringOnLcd1602(
+        text: string,
+        startPosition: number,
+        length: number,
+        option?: TextOption
+    ): void {
+        updateCharacterBuffer(
+            text,
+            startPosition - 1,
+            length,
+            16,
+            2,
+            toAlignment(option),
+            toPad(option)
+        );
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_clear_1602" block="LCD1602 limpar display"
+    //% weight=89
+    export function clearLcd1602(): void {
+        showStringOnLcd1602("", 1, 32);
+    }
+
+    //% group="Displays"
+    //% blockId=superkitautomacao_lcd_position_1602
+    //% block="%pos"
+    //% pos.fieldEditor="gridpicker"
+    //% pos.fieldOptions.columns=16
+    //% blockHidden=true
+    export function position1602(pos: LcdPosition1602): number {
+        return pos;
+    }
+
+    //% group="Displays"
+    //% blockId="superkitautomacao_lcd_showchararacter1602"
+    //% block="LCD1602 mostrar caractere %char|na posição %position=superkitautomacao_lcd_position_1602"
+    //% weight=58
+    export function lcdShowCharacter1602(char: LcdChar, position: number): void {
+        setCharacter(char, position - 1, 16, 2);
+    }
+
+    // =======================================================
+    // OLED
+    // =======================================================
+
+    //% blockId=superkit_init_oled block="inicializar Tela OLED I2C endereço $addr"
+    //% addr.defl=0x3C
+    //% weight=88 group="Displays"
+    export function inicializarOLED(addr: number): void {
+        oledAddr = addr;
+
+        let cmds = [
+            0xAE, 0xD5, 0x80,
+            0xA8, 0x3F, 0xD3,
+            0x00, 0x40, 0x8D,
+            0x14, 0x20, 0x00,
+            0xA1, 0xC8, 0xDA,
+            0x12, 0x81, 0xCF,
+            0xD9, 0xF1, 0xDB,
+            0x40, 0xA4, 0xA6,
+            0xAF
+        ];
+
+        for (let c of cmds) {
+            let buf = pins.createBuffer(2);
+            buf.setNumber(NumberFormat.UInt8LE, 0, 0x00);
+            buf.setNumber(NumberFormat.UInt8LE, 1, c);
+            pins.i2cWriteBuffer(oledAddr, buf);
+        }
+
+        limparOLED();
+    }
+
+    //% blockId=superkit_clear_oled block="limpar Tela OLED"
+    //% weight=86 group="Displays"
+    export function limparOLED(): void {
+        for (let pagina = 0; pagina < 8; pagina++) {
+            setPosicaoOLED(0, pagina);
+
+            let buf = pins.createBuffer(17);
+            buf.setNumber(NumberFormat.UInt8LE, 0, 0x40);
+
+            for (let i = 1; i < 17; i++) {
+                buf.setNumber(NumberFormat.UInt8LE, i, 0x00);
+            }
+
+            for (let x = 0; x < 8; x++) {
+                pins.i2cWriteBuffer(oledAddr, buf);
+            }
+        }
+    }
+
+    function setPosicaoOLED(coluna: number, pagina: number): void {
+        let buf = pins.createBuffer(2);
+        buf.setNumber(NumberFormat.UInt8LE, 0, 0x00);
+        buf.setNumber(NumberFormat.UInt8LE, 1, 0xB0 | pagina);
+        pins.i2cWriteBuffer(oledAddr, buf);
+
+        buf.setNumber(NumberFormat.UInt8LE, 1, 0x00 | (coluna & 0x0F));
+        pins.i2cWriteBuffer(oledAddr, buf);
+
+        buf.setNumber(NumberFormat.UInt8LE, 1, 0x10 | ((coluna >> 4) & 0x0F));
+        pins.i2cWriteBuffer(oledAddr, buf);
+    }
+
+    //% blockId=superkit_print_oled block="OLED mostrar texto $texto | na Coluna $x Linha $y"
+    //% x.min=0 x.max=120 y.min=0 y.max=7
+    //% weight=84 group="Displays"
+    export function mostrarTextoOLED(texto: string, x: number, y: number): void {
+        setPosicaoOLED(x, y);
+
+        for (let k = 0; k < texto.length; k++) {
+            let charCode = texto.charCodeAt(k);
+            let indiceFonte = (charCode - 32) * 5;
+
+            if (indiceFonte < 0 || indiceFonte >= FONTE_OLED.length) {
+                indiceFonte = 0;
+            }
+
+            let buf = pins.createBuffer(6);
+            buf.setNumber(NumberFormat.UInt8LE, 0, 0x40);
+
+            for (let i = 0; i < 5; i++) {
+                buf.setNumber(NumberFormat.UInt8LE, i + 1, FONTE_OLED[indiceFonte + i]);
+            }
+
+            pins.i2cWriteBuffer(oledAddr, buf);
+        }
+    }
+
+    // =======================================================
+    // KEYPAD E EXPANSORES
+    // =======================================================
+
+    //% blockId=superkit_read_keypad block="varrer Keypad 4x4 pino L1 $l1 L2 $l2 L3 $l3 L4 $l4 C1 $c1 C2 $c2 C3 $c3 C4 $c4"
+    //% weight=100 group="Keypads & Expansores" inlineInputMode=inline
+    export function lerKeypad4x4(
+        l1: DigitalPin, l2: DigitalPin, l3: DigitalPin, l4: DigitalPin,
+        c1: DigitalPin, c2: DigitalPin, c3: DigitalPin, c4: DigitalPin
+    ): string {
+        let teclas = [
+            "1", "2", "3", "A",
+            "4", "5", "6", "B",
+            "7", "8", "9", "C",
+            "*", "0", "#", "D"
+        ];
+
+        let linhas = [l1, l2, l3, l4];
+        let colunas = [c1, c2, c3, c4];
+
+        for (let c = 0; c < 4; c++) {
+            pins.setPull(colunas[c], PinPullMode.PullUp);
+        }
+
+        for (let r = 0; r < 4; r++) {
+            pins.digitalWritePin(linhas[r], 0);
+
+            for (let c = 0; c < 4; c++) {
+                if (pins.digitalReadPin(colunas[c]) == 0) {
+                    pins.digitalWritePin(linhas[r], 1);
+                    return teclas[r * 4 + c];
+                }
+            }
+
+            pins.digitalWritePin(linhas[r], 1);
+        }
+
+        return "";
+    }
+
+    //% blockId=superkit_init_i2c_keypad block="configurar Keypad I2C endereço $addr"
+    //% addr.defl=0x20
+    //% weight=95 group="Keypads & Expansores"
+    export function configurarKeypadI2C(addr: number): void {
+        keypadI2cAddr = addr;
+        let buf = pins.createBuffer(1);
+        buf.setNumber(NumberFormat.UInt8LE, 0, 0xFF);
+        pins.i2cWriteBuffer(keypadI2cAddr, buf);
+    }
+
+    //% blockId=superkit_read_i2c_keypad block="varrer Keypad 4x4 via I2C"
+    //% weight=90 group="Keypads & Expansores"
+    export function lerKeypadI2C(): string {
+        let teclas = [
+            "1", "2", "3", "A",
+            "4", "5", "6", "B",
+            "7", "8", "9", "C",
+            "*", "0", "#", "D"
+        ];
+
+        for (let r = 0; r < 4; r++) {
+            let wBuf = pins.createBuffer(1);
+            wBuf.setNumber(NumberFormat.UInt8LE, 0, 0xFF & ~(1 << r));
+            pins.i2cWriteBuffer(keypadI2cAddr, wBuf);
+
+            let rBuf = pins.i2cReadBuffer(keypadI2cAddr, 1);
+            let leitura = rBuf.getNumber(NumberFormat.UInt8LE, 0);
+
+            for (let c = 0; c < 4; c++) {
+                if (((leitura >> (4 + c)) & 0x01) == 0) {
+                    let rstBuf = pins.createBuffer(1);
+                    rstBuf.setNumber(NumberFormat.UInt8LE, 0, 0xFF);
+                    pins.i2cWriteBuffer(keypadI2cAddr, rstBuf);
+                    return teclas[r * 4 + c];
+                }
+            }
+        }
+
+        return "";
+    }
+
+    //% blockId=superkit_write_pcf8574 block="expansor PCF8574 endereço $addr | enviar byte $byteData"
+    //% addr.defl=0x20
+    //% weight=85 group="Keypads & Expansores"
+    export function writePCF8574(addr: number, byteData: number): void {
+        pcfStates[addr] = byteData;
+        let buf = pins.createBuffer(1);
+        buf.setNumber(NumberFormat.UInt8LE, 0, byteData);
+        pins.i2cWriteBuffer(addr, buf);
+    }
+
+    //% blockId=superkit_write_pcf8574_pin block="expansor PCF8574 endereço $addr | pino $pino como $estado"
+    //% addr.defl=0x20
+    //% weight=84 group="Keypads & Expansores"
+    export function controlarPinoPCF8574(addr: number, pino: PinoPCF8574, estado: EstadoChave): void {
+        let currentState = (pcfStates[addr] !== undefined) ? pcfStates[addr] : 0xFF;
+
+        if (estado == EstadoChave.Ligado) {
+            currentState |= (1 << pino);
+        } else {
+            currentState &= ~(1 << pino);
+        }
+
+        writePCF8574(addr, currentState);
+    }
+
+    //% blockId=superkit_read_pcf8574_pin block="expansor PCF8574 endereço $addr | ler pino $pino"
+    //% addr.defl=0x20
+    //% weight=83 group="Keypads & Expansores"
+    export function lerPinoPCF8574(addr: number, pino: PinoPCF8574): number {
+        let rBuf = pins.i2cReadBuffer(addr, 1);
+        let val = rBuf.getNumber(NumberFormat.UInt8LE, 0);
+        return ((val & (1 << pino)) != 0) ? 1 : 0;
+    }
+
+    // =======================================================
+    // RFID
+    // =======================================================
+
+    //% blockId=superkit_init_rfid block="inicializar Leitor RFID PN532 via I2C"
+    //% weight=100 group="RFID"
+    export function inicializarPN532(): boolean {
+        let buf = pins.createBuffer(7);
+        buf.setNumber(NumberFormat.UInt8LE, 0, 0x00);
+        buf.setNumber(NumberFormat.UInt8LE, 1, 0x00);
+        buf.setNumber(NumberFormat.UInt8LE, 2, 0xFF);
+        buf.setNumber(NumberFormat.UInt8LE, 3, 0x03);
+        buf.setNumber(NumberFormat.UInt8LE, 4, 0xFC);
+        buf.setNumber(NumberFormat.UInt8LE, 5, 0xD4);
+        buf.setNumber(NumberFormat.UInt8LE, 6, 0x14);
+
+        pins.i2cWriteBuffer(rfidAddr, buf);
+        return true;
+    }
+
+    //% blockId=superkit_read_rfid_uid block="ler UID da tag RFID presente"
+    //% weight=95 group="RFID"
+    export function lerTagUID(): string {
+        let cmd = pins.createBuffer(9);
+        cmd.setNumber(NumberFormat.UInt8LE, 0, 0x00);
+        cmd.setNumber(NumberFormat.UInt8LE, 1, 0x00);
+        cmd.setNumber(NumberFormat.UInt8LE, 2, 0xFF);
+        cmd.setNumber(NumberFormat.UInt8LE, 3, 0x04);
+        cmd.setNumber(NumberFormat.UInt8LE, 4, 0xFC);
+        cmd.setNumber(NumberFormat.UInt8LE, 5, 0xD4);
+        cmd.setNumber(NumberFormat.UInt8LE, 6, 0x4A);
+        cmd.setNumber(NumberFormat.UInt8LE, 7, 0x01);
+        cmd.setNumber(NumberFormat.UInt8LE, 8, 0x00);
+
+        pins.i2cWriteBuffer(rfidAddr, cmd);
+        basic.pause(30);
+
+        let response = pins.i2cReadBuffer(rfidAddr, 20);
+
+        if (response.getNumber(NumberFormat.UInt8LE, 6) == 0x4B) {
+            let uid = "";
+            let numBytes = response.getNumber(NumberFormat.UInt8LE, 12);
+            let hexChars = "0123456789ABCDEF";
+
+            for (let i = 0; i < numBytes; i++) {
+                let byteValor = response.getNumber(NumberFormat.UInt8LE, 13 + i);
+                uid += hexChars.charAt((byteValor >> 4) & 0x0F) + hexChars.charAt(byteValor & 0x0F);
+            }
+
+            return uid;
+        }
+
+        return "";
+    }
+
+    // =======================================================
+    // SENSORES
+    // =======================================================
+
+    //% blockId=superkit_sensor_agua block="sensor de água/chuva no pino analógico $pino"
+    //% weight=100 group="Sensores"
+    export function lerSensorAgua(pino: AnalogPin): number {
+        return pins.analogReadPin(pino);
+    }
+
+    //% blockId=superkit_sensor_gas block="sensor de gás no pino analógico $pino"
+    //% weight=95 group="Sensores"
+    export function lerSensorGas(pino: AnalogPin): number {
+        return pins.analogReadPin(pino);
+    }
+
+    //% blockId=superkit_sensor_umidade_solo block="umidade do solo (0-100%%) no pino analógico $pino"
+    //% weight=90 group="Sensores"
+    export function lerUmidadeSolo(pino: AnalogPin): number {
+        let leitura = pins.analogReadPin(pino);
+        let porcentagem = Math.map(leitura, 0, 1023, 0, 100);
+        return Math.clamp(0, 100, Math.round(porcentagem));
+    }
+
+    //% blockId=superkit_sensor_ldr block="luminosidade LDR no pino analógico $pino"
+    //% weight=85 group="Sensores"
+    export function lerLuminosidadeLDR(pino: AnalogPin): number {
+        return pins.analogReadPin(pino);
+    }
+
+    //% blockId=superkit_ler_porta_digital block="ler porta digital $pino"
+    //% weight=80 group="Sensores"
+    export function lerPortaDigital(pino: DigitalPin): number {
+        return pins.digitalReadPin(pino);
+    }
+
+    //% blockId=superkit_ler_porta_analogica block="ler porta analógica $pino"
+    //% weight=75 group="Sensores"
+    export function lerPortaAnalogica(pino: AnalogPin): number {
+        return pins.analogReadPin(pino);
+    }
+
+    // =======================================================
+    // LEDS E ATUADORES
+    // =======================================================
+
+    //% blockId=superkit_rele_bomba block="definir Relé / Bomba D'água no pino $pino como $estado"
+    //% weight=100 group="LEDs & Atuadores"
+    export function controlarReleBomba(pino: DigitalPin, estado: EstadoChave): void {
+        pins.digitalWritePin(pino, estado);
+    }
+
+    //% blockId=superkit_led_digital block="definir LED no pino digital $pino como $estado"
+    //% weight=95 group="LEDs & Atuadores"
+    export function controlarLEDDigital(pino: DigitalPin, estado: EstadoChave): void {
+        pins.digitalWritePin(pino, estado);
+    }
+
+    //% blockId=superkit_led_dimerizado block="ajustar brilho do LED no pino analógico $pino em $porcentagem %%"
+    //% porcentagem.min=0 porcentagem.max=100
+    //% weight=90 group="LEDs & Atuadores"
+    export function controlarBrilhoLED(pino: AnalogPin, porcentagem: number): void {
+        let pwmValor = Math.map(Math.clamp(0, 100, porcentagem), 0, 100, 0, 1023);
+        pins.analogWritePin(pino, Math.round(pwmValor));
+    }
+
+    //% blockId=superkit_led_rgb block="definir LED RGB | Pino R $pinoR Pino G $pinoG Pino B $pinoB | Red $r Green $g Blue $b"
+    //% r.min=0 r.max=255 g.min=0 g.max=255 b.min=0 b.max=255
+    //% weight=85 group="LEDs & Atuadores" inlineInputMode=inline
+    export function controlarLEDRGB(
+        pinoR: AnalogPin, pinoG: AnalogPin, pinoB: AnalogPin,
+        r: number, g: number, b: number
+    ): void {
+        pins.analogWritePin(pinoR, Math.map(Math.clamp(0, 255, r), 0, 255, 0, 1023));
+        pins.analogWritePin(pinoG, Math.map(Math.clamp(0, 255, g), 0, 255, 0, 1023));
+        pins.analogWritePin(pinoB, Math.map(Math.clamp(0, 255, b), 0, 255, 0, 1023));
+    }
+
+    //% blockId=superkit_controlar_semaforo block="semáforo de veículos | Verde $pinoV Amarelo $pinoA Vermelho $pinoVm | Verde $estV Amarelo $estA Vermelho $estVm"
+    //% weight=80 group="LEDs & Atuadores" inlineInputMode=inline
+    export function controlarSemaforo(
+        pinoV: DigitalPin, pinoA: DigitalPin, pinoVm: DigitalPin,
+        estV: EstadoChave, estA: EstadoChave, estVm: EstadoChave
+    ): void {
+        pins.digitalWritePin(pinoV, estV);
+        pins.digitalWritePin(pinoA, estA);
+        pins.digitalWritePin(pinoVm, estVm);
+    }
+
+    //% blockId=superkit_controlar_semaforo_pedestre block="semáforo de pedestre | Verde $pinoV Vermelho $pinoVm | Verde $estV Vermelho $estVm"
+    //% weight=78 group="LEDs & Atuadores" inlineInputMode=inline
+    export function controlarSemaforoPedestre(
+        pinoV: DigitalPin, pinoVm: DigitalPin,
+        estV: EstadoChave, estVm: EstadoChave
+    ): void {
+        pins.digitalWritePin(pinoV, estV);
+        pins.digitalWritePin(pinoVm, estVm);
+    }
+}basic.forever(function () {
+	
+})
